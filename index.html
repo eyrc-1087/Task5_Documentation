@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="None">
+        
+        
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>Task-5_Documentation</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/font-awesome.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/darcula.min.css">
+
+        <script src="js/jquery-1.10.2.min.js" defer></script>
+        <script src="js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body class="homepage">
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href=".">Task-5_Documentation</a>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#vb1087-task-5-documentation" class="nav-link">VB#1087 Task-5 Documentation</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#introduction" class="nav-link">Introduction</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#implementation" class="nav-link">Implementation</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#api-documentation" class="nav-link">API documentation</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#pkg_ros_iot_bridge" class="nav-link">pkg_ros_iot_bridge</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#pkg_task5" class="nav-link">pkg_task5</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="vb1087-task-5-documentation">VB#1087 Task-5 Documentation</h1>
+<h1 id="introduction">Introduction</h1>
+<p>In this task, all the packages' color is recognized using the feed from Camera#1. The packages are then picked by UR5#1 based on the incoming orders and their priorities. Then the packages are placed on the conveyor belt. The color of incoming packages on the conveyor belt is recognized using the feed of LogicalCamera#2. Then they are dropped into respective bins based on the color of the package. While the packages are identified and placed on the conveyor belt, the corresponding data is pushed to the spreadsheet at the necessary stages using the ros-iot bridge package. Also, email alerts are sent when orders are shipped and dispatched.</p>
+<h3 id="task-5-implementation-video">Task-5 Implementation Video</h3>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/wp2Z0IKL1Y8" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+<h1 id="implementation">Implementation</h1>
+<p>We believe in divide and conquer approach, so we divided the task into small pieces and finally integrated it.</p>
+<h3 id="network-of-ros-nodes-and-communication-between-them">Network of ROS nodes and communication between them</h3>
+<p><img alt="hi" src="img/img1.png" /></p>
+<p>The solution to the problem is divided into three main parts:<br>
+1. Action server(<strong>node_ros_iot_bridge_action_server</strong>)- acts as a bridge between the ROS nodes and  IoT(MQTT and Spreadsheet).<br>
+2. Action client 1 (<strong>node_t5_1.py</strong>)- receives orders and does pick and place.<br>
+3. Action client 2  (<strong>node_t5_2.py</strong>)- which does color recognition and sorting of packages.<br></p>
+<p><img alt="hi" src="img/img3.jpeg" /></p>
+<ul>
+<li>We start with recognizing the packages' colors on the shelf and save this data and update the same to Inventory spreadsheet.</li>
+<li>once the orders are received, we start to process them based on the priority.</li>
+<li>Based on the order received, we direct ur5#1 to pick the package from the shelf and place it on the conveyor belt.</li>
+<li>ur5#2 then picks the package on the conveyor belt, sorts the package according to its color and drop it to the respective bin.</li>
+<li>Simultaneously we update the individual spreadsheets when a particular goal is achieved. </li>
+</ul>
+<h3 id="overview-of-updating-spreadsheet">Overview of updating spreadsheet</h3>
+<p>Whenever there's a need to update a spreadsheet, action clients(<strong>node_t5_1</strong> and <strong>node_t5_2</strong> )send a goal to action server(<strong>node_action_sever_ros_iot_bridge</strong>) through ROS action named msgRosIot.action. 
+This action server uses custom module pyiot to send a request to google spreadsheets using <strong>requests</strong> module of python.</p>
+<h3 id="color-recognition">Color recognition</h3>
+<p>So after having an idea of how the ROS nodes should work, our initial task was to identify the packages' color on the warehouse's shelf. We get a continuous stream of images of the shelf from the feed of <strong>Camera#1</strong> (by subscribing to <strong>/eyrc/vb/camera_1/image_raw</strong> topic). Initially, we cropped out the background from the obtained feed. Later, we cropped the partially cropped image into 12 equal parts using <strong>openCV</strong> to obtain each package's QR code. Then we detected and decoded the QR codes in each cropped image to get the package color using the <strong>pyzbar</strong> library. We pushed the obtained colors into a  list with the corresponding position in order 00, 01, 02, 10 .... To avoid changes in the color array, we made it a one time update (instead of unsubscribing from the topic)After detecting the color, update the inventory sheet, which contains the stock present in the warehouse and the package's position.</p>
+<p><img alt="hi" src="img/img2.png" /></p>
+<h3 id="updating-the-inventory-sheet">Updating the Inventory Sheet</h3>
+<p>After detecting the color, update the inventory sheet, which contains the stock present in the warehouse and the package's position.
+This is achieved by sending thedata to ros_iot_brdge action server as a goal which internally makes a request using python <strong>request</strong> module to update the spreadsheet.</p>
+<h3 id="receiving-the-orders">Receiving the orders</h3>
+<p>After 1 minute of sim-time, orders are published on <strong>/eyrc/vb/JITHSHAN/orders</strong> MQTT topic at irregular time intervals. node_action_server_ros_iot_bridge(ROS node) starts a mqtt subscriber thread to the above topic during initialization(Using iot.py). Also the orders coming from this MQTT topic are published to a ROS topic <strong>/ros_iot_bridge/mqtt/sub</strong>. So other ROS nodes access these orders by subscribing to this ROS topic. These orders are pushed into orders list through subscriber callback function.</p>
+<p><img alt="hi" src="img/img4.jpeg" /></p>
+<h3 id="update-incomingorders-sheet">Update IncomingOrders sheet</h3>
+<p>While recieving the orders, we simultaneoulsy update the order details on IncomingOrders spreadsheet.</p>
+<h3 id="pick-and-place">Pick and place</h3>
+<p>Once orders are received, we choose the package to be picked using the list of the pending orders. The list is iterated, and order with the highest priority (HP &gt; MP &gt; LP) is selected. If there are multiple orders with the highest priority, the oldest one is chosen. Based on the selected order, we iterate over the colors list(which is obtained after color detection) to get the package's position.
+Now we have the list index(i), based on this list index we calculate the position of the package on the shelf</p>
+<p>If order is found at ith position(starting from 0) in colors list, position on shelf is given by</p>
+<pre><code>pos = str(i//3)+str(i%3)
+</code></pre>
+<p>eg., If selected order was Medicine and in colors list it was found at 5th position</p>
+<pre><code>pos = str(5//3) + str(5%3) = &quot;12&quot;
+</code></pre>
+<p>"packagen12" is picked</p>
+<ul>
+<li>UR5#1 is now directed to pick the package from the shelf with the aid of saved trajectories.Now the package corresponding to the order is picked from the shelf and placed on the conveyor belt.</li>
+<li>Corresponding items are removed from both order list and color list in order to avoid picking the same package which is already picked.</li>
+<li>Finally, data is pushed into <strong>OrdersDispatched</strong> sheet to track the shipment by sending a request to the ros_iot_bridge action server. Also an email notification is sent using Google app script.</li>
+</ul>
+<h3 id="sorting-the-packages">Sorting the packages</h3>
+<p>When the package reaches near <strong>UR5#2</strong>, <strong>Logical Camera #2</strong> detects the package on the conveyor belt and the conveyor belt is stopped.
+* Conveyor belt is controlled using the feed of <strong>eyrc/vb/logical_camera_2</strong> topic. Whenever package reaches within a certain range from the  Logical Camera#2, conveyor belt is stopped.
+* Also, using the same topic we can obtain the package details(package name). Now, knowing the package name, we can get color of the package from the colors list as follows: </p>
+<p>If package name is "packagenxy", index of the package in colors list is given by, </p>
+<pre><code>i = int(x*3 + y)
+</code></pre>
+<p>For example, if package name is packagen12,</p>
+<pre><code>i = int(1*3 + 2) = 5
+</code></pre>
+<p>Color at this index(starting from zero), is retrieved in order to find the color of the package.</p>
+<ul>
+<li>Knowing the package color we sort the packages , UR5#2 is now diredcted to move towards the respective bin and drop the package.</li>
+<li>Conveyor belt is powered on after this.</li>
+<li>Also, data is pushed into the <strong>OrdersShipped</strong> sheet by sending a request to the ros_iot_bridge action sever. Also an email alert is sent to the user using Google app script. </li>
+</ul>
+<h3 id="warehouse-dashboard"><a href="https://eyrc-1087.github.io/VB1087_WareHouse_Dashboard/">Warehouse Dashboard</a></h3>
+<ul>
+<li>To have a proper UI, Warehouse system is made in to a webpage which is hosted on Github. Data to this webpage is provided by a json endpoint which is obtained from the Dashboard sheet of google spreadsheets.</li>
+<li>Dashboard sheet references data from other sheets like IncomingOrders, OrdersDispatched, OrdersShipped and aggregated into a single sheet with necessary data.</li>
+</ul>
+<h1 id="api-documentation">API documentation</h1>
+<h2 id="pkg_ros_iot_bridge">pkg_ros_iot_bridge</h2>
+<h3 id="msgrosiotaction">msgRosIot.action</h3>
+<p>This action file is for communication between action server (node_action_server_ros_iot_bridge) and action clients (node_t5_1 and node_t5_2)
+This is used to obtain the orders from mqtt topic and to publish to spreadsheet</p>
+<pre><code># goal
+string protocol           # mqtt
+string mode               # pub(to publish to spreadsheet) or sub(to obtain orders)
+string topic              # Taken from config_pyiot.yaml mqtt:topic_pub 
+string sheetid            # Sheet ID of the spreadsheet
+string orderid            # order ID obtained from the incoming orders
+string item               # item type of the order (eg., Medicine)
+int8 quantity             # quantity of order
+string city               # city name obtained from the incoming orders
+string sku                # This is the Inventory's Stock Keeping Unit.
+string latitude           # latitude obtained from incoming orders
+string longitude          # longitude obtained from incoming orders
+---
+# result
+bool flag_success         # result of processed request
+---
+# feedback
+int8 percentage_complete  # feedback given by server during request processing 
+</code></pre>
+<h3 id="config_pyiotyaml">config_pyiot.yaml</h3>
+<p>Parameters to be loaded to parameter server that are used by ROS nodes for mqtt subscription.</p>
+<pre><code>config_pyiot:
+  mqtt:
+    server_url: &quot;broker.mqttdashboard.com&quot;          # http://www.hivemq.com/demos/websocket-client/
+    server_port: 1883
+    topic_sub: &quot;/eyrc/vb/JITHSHAN/orders&quot;           # &lt;unique_id&gt; = JITHSHAN
+    topic_pub: &quot;eyrc/JITHSHAN/ros_to_iot&quot;           # &lt;unique_id&gt; = JITHSHAN
+    qos: 0
+
+    sub_cb_ros_topic: &quot;/ros_iot_bridge/mqtt/sub&quot;    # ROS nodes can listed to this topic to receive data from MQTT Subscription
+
+  google_apps:
+    spread_sheet_id: &quot;AKfycbzCBQ_GXXUg8AdezJODXQVyvsfiQX0ImgYLtiFUsKMDjWH4uSyX6_uzig&quot;
+
+</code></pre>
+<h3 id="msgmqttmsgsubmsg">msgMqttMsgSub.msg</h3>
+<p>For messages on mqtt topic</p>
+<pre><code>time timestamp
+string topic
+string message
+</code></pre>
+<h3 id="iot-py">iot .py</h3>
+<pre><code>Functions to perform IoT related tasks
+1. Subscribing from mqtt topic to get orders
+2. Publishing to a mqtt topic (if required)
+3. Updating the spreadsheet
+</code></pre>
+<ul>
+<li>mqtt_subscribe_thread_start(arg_callback_func, arg_broker_url,arg_broker_port, arg_mqtt_topic, arg_mqtt_qos)</li>
+</ul>
+<pre><code>Start a subscriber thread to mqtt topic
+
+Parameters:
+----------
+arg_callback_func : function
+    callback function to be used
+arg_broker_url : str
+    url of the broker
+arg_broker_port : int
+    connected port number
+arg_mqtt_topic : str
+    topic to publish message
+arg_mqtt_qos : int
+    qos level
+</code></pre>
+<ul>
+<li>mqtt_publish(arg_broker_url, arg_broker_port,arg_mqtt_topic, arg_mqtt_message, arg_mqtt_qos)</li>
+</ul>
+<pre><code>Publishes the message to a specified mqtt topic
+
+Parameters:
+----------
+arg_broker_url : str
+    url of the broker
+arg_broker_port : int
+    connected port number
+arg_mqtt_topic : str
+    topic to publish message
+arg_mqtt_message : str
+    message to be published
+arg_mqtt_qos : int
+    qos level
+</code></pre>
+<ul>
+<li>update_spreadsheet(*argv) </li>
+</ul>
+<pre><code>Update the spreadsheet with the provided parameters
+
+Parameters:
+----------
+Can provide any no of parameters that needs to be updated in spreadsheet
+Each parameter is a dictionary that has details to update the specific spreadsheet 
+with coloum name as key with it's respective value
+</code></pre>
+<h3 id="node_ros_iot_bridgepy">node_ros_iot_bridge.py</h3>
+<pre><code>Action server and bridge between ROS nodes and IoT
+</code></pre>
+<h4 id="class-rosiotbridgeactionserver">class RosIotBridgeActionServer:</h4>
+<pre><code>Subscribe and publish to mqtt topics and 
+push data to spreadsheets
+</code></pre>
+<ul>
+<li>mqtt_sub_callback(self, client, userdata, message)</li>
+</ul>
+<pre><code>Callback function for mqtt subscription this function should
+be called whenever we are subscribing to a mqtt topic 
+
+Parameters:
+----------
+client : str
+    subscriber client
+userdata: str
+    data of user
+message: str
+    message obtained after subscription
+</code></pre>
+<ul>
+<li>on_goal(self, goal_handle)</li>
+</ul>
+<pre><code>Validate a goal and start processing it
+
+Parameters:
+----------
+goal_handle : str
+    goal to process
+</code></pre>
+<ul>
+<li>process_goal(self, goal_handle)</li>
+</ul>
+<pre><code>Process the goal sent by client
+
+Parameters:
+----------
+goal_handle : str
+    goal to be processed
+</code></pre>
+<ul>
+<li>on_cancel(self, goal_handle)</li>
+</ul>
+<pre><code>Print goal_id of the goal to be canceled
+
+parameter
+---------
+goal_handle : str
+    goal to be canceled
+</code></pre>
+<h2 id="pkg_task5">pkg_task5</h2>
+<h3 id="node_t5_1py">node_t5_1.py</h3>
+<h4 id="class-iotrosbridgeactionclient">class IotRosBridgeActionClient:</h4>
+<pre><code>Action client to send goals to action server
+</code></pre>
+<ul>
+<li>on_transition(self, goal_handle)</li>
+</ul>
+<pre><code>Log when there's a transition in the state
+
+parameter
+---------
+goal_handle : str
+    new goal
+</code></pre>
+<ul>
+<li>send_goal(self, arg_protocol, arg_mode, arg_topic, arg_sheetid, arg_orderid, arg_item,arg_quantity, arg_city, arg_sku, arg_datetime, arg_latitude, arg_longitude)</li>
+</ul>
+<pre><code>Send goals to a action server
+
+parameter
+---------
+arg_protocol : str
+    protocol
+arg_mode : str
+    pub or sub mode
+arg_topic : str
+    ROS topic to subscribe or publish message
+arg_sheetid : str
+    sheet name
+arg_orderid : str
+    order id
+arg_item : str
+    item
+arg_quantity :int
+    quantity
+arg_city :str
+    city name
+arg_sku :str
+    SKU
+arg_datetime :str
+    date and time string
+arg_latitudearg
+    latitude information
+arg_longitude :str
+    longitude information
+</code></pre>
+<h4 id="class-ur5">class Ur5:</h4>
+<pre><code>process pick and place
+</code></pre>
+<ul>
+<li>vacuum_gripper_activator(self, bool_x)</li>
+</ul>
+<pre><code>activate or deactivate the vacuum gripper
+
+parameter
+----------
+bool_x : bool
+</code></pre>
+<ul>
+<li>set_joint_angles(self, arg_list_joint_angles)</li>
+</ul>
+<pre><code>To set the joint angles of UR5 in gazebo using moveit! python API
+parameters
+-----------
+arg_list_joint_angles : str
+    list containing the joint angles
+</code></pre>
+<ul>
+<li>clear_octomap(self)</li>
+</ul>
+<pre><code>resetting octomap
+</code></pre>
+<ul>
+<li>hard_set_joint_angles(self, arg_list_joint_angles, arg_max_attempts)</li>
+</ul>
+<pre><code>To set the joint angles of UR5 in gazebo using moveit! python API with number of attempts
+
+parameters
+----------
+arg_list_joint_angles : str
+    list containing the joint angles
+arg_max_attempts : int
+    max number of attempts
+</code></pre>
+<ul>
+<li>moveit_play_planned_path_from_file(self, arg_file_path, arg_file_name)</li>
+</ul>
+<pre><code>play planned path from a saved trajectory
+
+parameters
+----------
+arg_file_path : str
+    file path fo
+</code></pre>
+<ul>
+<li>moveit_hard_play_planned_path_from_file(self,arg_file_path,arg_file_name, arg_max_attempts)</li>
+</ul>
+<pre><code>Play the trajectory which is already saved with given no of attempts
+
+Parameters
+-----------
+arg_file_path: str
+    path to the saved trajectory
+arg_file_name: str
+    name of the saved trajectory file
+arg_max_attempts: int
+    max no to attempts to play the path successfully
+</code></pre>
+<ul>
+<li>sub_callback(self, data)</li>
+</ul>
+<pre><code>subscriber callback function for incoming orders
+
+parameters
+----------
+data : str
+    details of order
+</code></pre>
+<h3 id="class-camera1">class Camera1:</h3>
+<pre><code>process Camera#1 data
+</code></pre>
+<ul>
+<li>get_qr_data(self, arg_image)</li>
+</ul>
+<pre><code>decode qr data from image
+
+parameters
+-----------
+arg_image: array(image)
+    cropped image with qr code
+</code></pre>
+<ul>
+<li>callback(self, data)</li>
+</ul>
+<pre><code>callback function to obtain feed of camera
+
+parameters
+----------
+data : array(image)
+    image data from Camera#1
+</code></pre>
+<h3 id="node_t5_2py">node_t5_2.py</h3>
+<h4 id="class-iotrosbridgeactionclient_1">class IotRosBridgeActionClient:</h4>
+<p><strong>Same as in node_t5_1.py</strong></p>
+<pre><code>action client to send goals to action server
+</code></pre>
+<ul>
+<li>on_transition(self, goal_handle)</li>
+<li>send_goal(self, arg_protocol, arg_mode, arg_topic, arg_sheetid, arg_orderid, arg_item, arg_quantity,arg_city, arg_sku, arg_datetime, arg_latitude, arg_longitude)</li>
+<li>conveyor_belt_activator(power_x)</li>
+</ul>
+<pre><code>activates the conveyor belt with the given power
+
+parameter
+---------
+power_x : int
+    power to activate the conveyor belt
+</code></pre>
+<h3 id="class-camera1_1">class Camera1:</h3>
+<p><strong>Same as in node_t5_1.py</strong></p>
+<pre><code>process Camera#1 data
+</code></pre>
+<ul>
+<li>get_qr_data(self, arg_image)    </li>
+<li>callback(self, data):</li>
+</ul>
+<h3 id="class-ur5_1">class Ur5:</h3>
+<pre><code>process pick and place
+</code></pre>
+<ul>
+<li>logical_camera_callback(self, data):</li>
+</ul>
+<pre><code>callback function to subscribe to feed of logical camera
+
+parameters
+----------
+data : str
+    data of the subscription
+</code></pre>
+<p>Following methods are same as in <strong>node_t5_1.py</strong> </p>
+<ul>
+<li>vacuum_gripper_activator(self, bool_x) <br></li>
+<li>clear_octomap(self) <br></li>
+<li>moveit_play_planned_path_from_file(self, arg_file_path,arg_file_name) <br></li>
+<li>moveit_hard_play_planned_path_from_file(self,arg_file_path,arg_file_name,arg_max_attempts) <br></li>
+<li>sub_callback(self, data) <br></li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js" defer></script>
+        <script src="search/main.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter
+                    your search terms below.
+                </p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
+
+<!--
+MkDocs version : 1.1.2
+Build Date UTC : 2021-02-16 16:27:18.809065+00:00
+-->
